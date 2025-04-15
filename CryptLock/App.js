@@ -6,7 +6,7 @@ const Drawer = createDrawerNavigator();
 function HomeScreen() {
   return (
     <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
-      <Text>Home Screeeen</Text>
+      <Text>Home Screen</Text>
     </View>
   );
 }
