@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, Button, StyleSheet } from 'react-native';
+import { collection, getDocs } from "firebase/firestore";
+import { db } from '../firebaseConfig';
 
 const styles = StyleSheet.create({
   container: {
@@ -36,11 +38,38 @@ const styles = StyleSheet.create({
   },
 });
 
-export default function VaultScreen({ passwords, deletePassword }) {
+export default function VaultScreen() {
+  const [passwords, setPasswords] = useState([]);
+
+  useEffect(() => {
+    const fetchPasswords = async () => {
+      try {
+        const querySnapshot = await getDocs(collection(db, "Senhas"));
+        const fetchedPasswords = [];
+        querySnapshot.forEach((doc) => {
+          const data = doc.data();
+          if (data.senha) {
+            fetchedPasswords.push(data.senha); // ajusta com o nome do campo correto
+          }
+        });
+        setPasswords(fetchedPasswords);
+      } catch (error) {
+        console.error("Erro ao buscar senhas:", error);
+      }
+    };
+
+    fetchPasswords();
+  }, []);
+
+  const deletePassword = (index) => {
+    const newPasswords = [...passwords];
+    newPasswords.splice(index, 1);
+    setPasswords(newPasswords);
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Cofre de Senhas</Text>
-      
       {passwords.length === 0 ? (
         <Text style={styles.emptyMessage}>Nenhuma senha armazenada</Text>
       ) : (
@@ -50,9 +79,9 @@ export default function VaultScreen({ passwords, deletePassword }) {
           renderItem={({ item, index }) => (
             <TouchableOpacity style={styles.item}>
               <Text selectable style={styles.passwordText}>Senha {index + 1}: {item}</Text>
-              <Button 
-                title="Apagar" 
-                onPress={() => deletePassword(index)} 
+              <Button
+                title="Apagar"
+                onPress={() => deletePassword(index)}
                 color="#ff3d00"
               />
             </TouchableOpacity>
