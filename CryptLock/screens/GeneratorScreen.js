@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, Button, StyleSheet, Alert } from 'react-native';
+import * as Clipboard from 'expo-clipboard';
+
 
 const styles = StyleSheet.create({
   container: {
@@ -65,7 +67,7 @@ export default function GeneratorScreen({ route }) {
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Gerador de Senhas</Text>
-      
+
       <View style={styles.lengthControl}>
         <Text>Tamanho: {length}</Text>
         <View style={styles.lengthButtons}>
@@ -73,23 +75,22 @@ export default function GeneratorScreen({ route }) {
           <Button title="+" onPress={() => setLength(Math.min(32, length + 1))} />
         </View>
       </View>
-      
+
       <Text selectable style={styles.generatedPassword}>{password || 'Clique em Gerar'}</Text>
-      
+
       <View style={styles.buttonGroup}>
         <Button title="Gerar Senha" onPress={handleGenerate} color="#6200ee" />
         {password && (
-          <Button 
-            title="Copiar para Cofre" 
+          <Button
+            title="Copiar para Área de Transferência"
             onPress={() => {
-              if (route.params?.addPassword) {
-                route.params.addPassword(password);
-                Alert.alert('Sucesso', 'Senha adicionada ao cofre!');
-              }
-            }} 
+              Clipboard.setStringAsync(password);
+              Alert.alert('Copiado!', 'Senha copiada para a área de transferência.');
+            }}
             color="#03dac6"
           />
         )}
+
       </View>
     </View>
   );
