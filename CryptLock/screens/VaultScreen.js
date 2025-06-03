@@ -2,6 +2,9 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, FlatList, TouchableOpacity, Button, StyleSheet, TextInput, Modal, Alert } from 'react-native';
 import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, onSnapshot } from "firebase/firestore";
 import { db } from '../firebaseConfig';
+import { signOut } from 'firebase/auth';
+import { auth } from '../firebaseConfig';
+import { query, where } from "firebase/firestore";
 
 const styles = StyleSheet.create({
   container: {
@@ -66,7 +69,7 @@ const styles = StyleSheet.create({
   },
 });
 
-export default function VaultScreen() {
+export default function VaultScreen({ navigation }) {
   const [passwords, setPasswords] = useState([]);
   const [modalVisible, setModalVisible] = useState(false);
   const [currentPassword, setCurrentPassword] = useState(null);
@@ -76,23 +79,31 @@ export default function VaultScreen() {
     senha: ''
   });
 
-  // Carrega as senhas em tempo real
-  useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, "Senhas"), (querySnapshot) => {
-      const fetchedPasswords = [];
-      querySnapshot.forEach((doc) => {
-        fetchedPasswords.push({
-          id: doc.id,
-          ...doc.data()
-        });
+useEffect(() => {
+  if (!auth.currentUser) {
+    setPasswords([]);
+    return;
+  }
+
+  const q = query(
+    collection(db, "Senhas"), 
+    where("userId", "==", auth.currentUser.uid)
+  );
+
+  const unsubscribe = onSnapshot(q, (querySnapshot) => {
+    const fetchedPasswords = [];
+    querySnapshot.forEach((doc) => {
+      fetchedPasswords.push({
+        id: doc.id,
+        ...doc.data()
       });
-      setPasswords(fetchedPasswords);
     });
+    setPasswords(fetchedPasswords);
+  });
 
-    return () => unsubscribe();
-  }, []);
+  return () => unsubscribe();
+}, [auth.currentUser]);
 
-  // Manipula mudanças nos inputs do formulário
   const handleInputChange = (name, value) => {
     setFormData({
       ...formData,
@@ -100,7 +111,6 @@ export default function VaultScreen() {
     });
   };
 
-  // Abre o modal para adicionar ou editar
   const openModal = (password = null) => {
     if (password) {
       setCurrentPassword(password);
@@ -120,19 +130,19 @@ export default function VaultScreen() {
     setModalVisible(true);
   };
 
-  // Fecha o modal
   const closeModal = () => {
     setModalVisible(false);
   };
 
-  // Adiciona uma nova senha
   const addPassword = async () => {
     try {
-      await addDoc(collection(db, "Senhas"), formData);
+      await addDoc(collection(db, "Senhas"), {
+        ...formData,
+        userId: auth.currentUser.uid
+      });
       closeModal();
     } catch (error) {
       Alert.alert("Erro", "Não foi possível adicionar a senha");
-      console.error("Erro ao adicionar senha:", error);
     }
   };
 
@@ -171,8 +181,24 @@ export default function VaultScreen() {
     }
   };
 
+  const handleLogout = async () => {
+    try {
+      await signOut(auth);
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
+    } catch (error) {
+      Alert.alert('Erro', error.message);
+    }
+  };
+
   return (
     <View style={styles.container}>
+      <View style={{ flexDirection: 'row', justifyContent: 'space-between', width: '100%' }}>
+        <Text style={styles.title}>Cofre de Senhas</Text>
+        <Button title="Sair" onPress={handleLogout} color="#ff3d00" />
+      </View>
       <Text style={styles.title}>Cofre de Senhas</Text>
       
       <Button

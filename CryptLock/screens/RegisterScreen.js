@@ -1,7 +1,7 @@
-// screens/LoginScreen.js
+// screens/RegisterScreen.js
 import React, { useState } from 'react';
 import { View, Text, Button, TextInput, Alert, StyleSheet } from 'react-native';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
 
 const styles = StyleSheet.create({
@@ -28,27 +28,33 @@ const styles = StyleSheet.create({
   },
 });
 
-export default function LoginScreen({ navigation }) {
+export default function RegisterScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
 
-  const handleLogin = () => {
-    signInWithEmailAndPassword(auth, email, password)
+  const handleRegister = () => {
+    if (password !== confirmPassword) {
+      Alert.alert('Erro', 'As senhas não coincidem');
+      return;
+    }
+
+    createUserWithEmailAndPassword(auth, email, password)
       .then(() => {
-        // Login bem-sucedido, o onAuthStateChanged em App.js irá lidar com a navegação
+        Alert.alert('Sucesso', 'Conta criada com sucesso!');
+        navigation.navigate('Login');
       })
       .catch(error => {
         let errorMessage;
         switch (error.code) {
+          case 'auth/email-already-in-use':
+            errorMessage = 'Este email já está em uso.';
+            break;
           case 'auth/invalid-email':
             errorMessage = 'Email inválido.';
             break;
-          case 'auth/user-disabled':
-            errorMessage = 'Esta conta foi desativada.';
-            break;
-          case 'auth/user-not-found':
-          case 'auth/wrong-password':
-            errorMessage = 'Email ou senha incorretos.';
+          case 'auth/weak-password':
+            errorMessage = 'A senha deve ter pelo menos 6 caracteres.';
             break;
           default:
             errorMessage = 'Ocorreu um erro. Tente novamente.';
@@ -59,7 +65,7 @@ export default function LoginScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>CryptLock</Text>
+      <Text style={styles.title}>Criar Conta</Text>
       <TextInput
         placeholder="Email"
         value={email}
@@ -75,10 +81,17 @@ export default function LoginScreen({ navigation }) {
         secureTextEntry
         style={styles.input}
       />
-      <Button title="Entrar" onPress={handleLogin} color="#6200ee" />
+      <TextInput
+        placeholder="Confirmar Senha"
+        value={confirmPassword}
+        onChangeText={setConfirmPassword}
+        secureTextEntry
+        style={styles.input}
+      />
+      <Button title="Registrar" onPress={handleRegister} color="#6200ee" />
       <Button 
-        title="Criar conta" 
-        onPress={() => navigation.navigate('Register')} 
+        title="Já tem uma conta? Faça login" 
+        onPress={() => navigation.navigate('Login')} 
         color="#888"
       />
     </View>
