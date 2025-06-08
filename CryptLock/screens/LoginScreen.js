@@ -1,4 +1,4 @@
-// screens/LoginScreen.js
+// screens/LoginScreen.js balacobaco
 import React, { useState } from 'react';
 import { View, Text, Button, TextInput, Alert, StyleSheet } from 'react-native';
 import { signInWithEmailAndPassword } from 'firebase/auth';
