@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "313330011170",
+    "project_id": "cryptlock-c2f10",
+    "storage_bucket": "cryptlock-c2f10.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:313330011170:android:e6a58a2559428eeeb84e7b",
+        "android_client_info": {
+          "package_name": "com.crypt.lock"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAafesGAl5bS2FPreAOlTmJAkxd9QfRuRI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
