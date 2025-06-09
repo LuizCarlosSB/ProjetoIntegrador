@@ -1,30 +1,66 @@
-// screens/LoginScreen.js hello sir =)
+// screens/LoginScreen.js
 import React, { useState } from 'react';
-import { View, Text, Button, TextInput, Alert, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  TextInput,
+  Alert,
+  StyleSheet,
+  TouchableOpacity,
+  TouchableWithoutFeedback,
+  Keyboard,
+} from 'react-native';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
+import Icon from 'react-native-vector-icons/FontAwesome';
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+    justifyContent: 'center',
+    paddingHorizontal: 30,
+    backgroundColor: '#1c1c2e',
+  },
+  logoContainer: {
+    marginBottom: 40,
     alignItems: 'center',
-    padding: 20,
-    backgroundColor: '#f5f5f5',
+    justifyContent: 'center',
+  },
+  lockIcon: {
+    position: 'absolute',
+    fontSize: 100,
+    color: '#ffffff',
+    opacity: 0.08,
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
-    marginVertical: 20,
-    color: '#6200ee',
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#ffffff',
   },
   input: {
-    borderWidth: 1,
-    borderColor: '#ccc',
+    backgroundColor: '#2c2c3e',
+    color: '#ffffff',
     padding: 15,
-    width: '100%',
+    borderRadius: 10,
+    marginBottom: 20,
+    fontSize: 16,
+    borderWidth: 1,
+    borderColor: '#3c3c4e',
+  },
+  button: {
+    backgroundColor: '#007AFF',
+    paddingVertical: 15,
+    borderRadius: 10,
     marginBottom: 15,
-    borderRadius: 8,
-    backgroundColor: '#fff',
+    alignItems: 'center',
+  },
+  buttonSecondary: {
+    backgroundColor: '#4d4d5e',
+  },
+  buttonText: {
+    color: '#ffffff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
 
@@ -35,7 +71,7 @@ export default function LoginScreen({ navigation }) {
   const handleLogin = () => {
     signInWithEmailAndPassword(auth, email, password)
       .then(() => {
-        // Login bem-sucedido, o onAuthStateChanged em App.js irá lidar com a navegação
+        // Navegação será gerenciada pelo onAuthStateChanged
       })
       .catch(error => {
         let errorMessage;
@@ -58,29 +94,40 @@ export default function LoginScreen({ navigation }) {
   };
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>CryptLock</Text>
-      <TextInput
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        style={styles.input}
-        autoCapitalize="none"
-        keyboardType="email-address"
-      />
-      <TextInput
-        placeholder="Senha"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
-        style={styles.input}
-      />
-      <Button title="Entrar" onPress={handleLogin} color="#6200ee" />
-      <Button 
-        title="Criar conta" 
-        onPress={() => navigation.navigate('Register')} 
-        color="#888"
-      />
-    </View>
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      <View style={styles.container}>
+        <View style={styles.logoContainer}>
+          <Icon name="lock" style={styles.lockIcon} />
+          <Text style={styles.title}>CryptLock</Text>
+        </View>
+
+        <TextInput
+          placeholder="Email"
+          placeholderTextColor="#888"
+          value={email}
+          onChangeText={setEmail}
+          style={styles.input}
+          autoCapitalize="none"
+          keyboardType="email-address"
+        />
+        <TextInput
+          placeholder="Senha"
+          placeholderTextColor="#888"
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+          style={styles.input}
+        />
+        <TouchableOpacity style={styles.button} onPress={handleLogin}>
+          <Text style={styles.buttonText}>Entrar</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.button, styles.buttonSecondary]}
+          onPress={() => navigation.navigate('Register')}
+        >
+          <Text style={styles.buttonText}>Criar Conta</Text>
+        </TouchableOpacity>
+      </View>
+    </TouchableWithoutFeedback>
   );
 }
