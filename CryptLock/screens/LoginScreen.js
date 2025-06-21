@@ -9,10 +9,13 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   Keyboard,
+  ActivityIndicator, // Adicione esta linha
 } from 'react-native';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import { loginUser } from '../services/authService';
+import StyledButton from '../components/StyledButton';
 
 const styles = StyleSheet.create({
   container: {
@@ -67,9 +70,11 @@ const styles = StyleSheet.create({
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
 
   const handleLogin = () => {
-    signInWithEmailAndPassword(auth, email, password)
+    setLoading(true);
+    loginUser(email, password)
       .then(() => {
         // Navegação será gerenciada pelo onAuthStateChanged
       })
@@ -90,6 +95,9 @@ export default function LoginScreen({ navigation }) {
             errorMessage = 'Ocorreu um erro. Tente novamente.';
         }
         Alert.alert('Erro', errorMessage);
+      })
+      .finally(() => {
+        setLoading(false);
       });
   };
 
@@ -118,8 +126,12 @@ export default function LoginScreen({ navigation }) {
           secureTextEntry
           style={styles.input}
         />
-        <TouchableOpacity style={styles.button} onPress={handleLogin}>
-          <Text style={styles.buttonText}>Entrar</Text>
+        <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
+          {loading ? (
+            <ActivityIndicator color="#fff" />
+          ) : (
+            <Text style={styles.buttonText}>Entrar</Text>
+          )}
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.button, styles.buttonSecondary]}

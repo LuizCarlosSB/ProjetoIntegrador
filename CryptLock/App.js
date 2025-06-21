@@ -5,7 +5,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList } from '@react-navigation/drawer';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './firebaseConfig';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 
 import LoginScreen from './screens/LoginScreen';
@@ -36,16 +36,46 @@ const drawerStyles = {
 };
 
 function CustomDrawerContent(props) {
+  // Lógica de logout com a janela de confirmação
+  const handleLogout = () => {
+    Alert.alert(
+      "Confirmar Saída",
+      "Você tem certeza que deseja sair?",
+      [
+        { text: "Cancelar", style: "cancel" },
+        { 
+          text: "Sair", 
+          onPress: () => signOut(auth),
+          style: "destructive"
+        }
+      ]
+    );
+  };
+
   return (
-    <DrawerContentScrollView {...props} contentContainerStyle={{ backgroundColor: '#1c1c2e', flex: 1 }}>
-      <View style={styles.drawerHeader}>
-        <Icon name="lock" size={50} color="#00e0b8" />
-        <Text style={styles.drawerTitle}>CryptLock</Text>
+    <DrawerContentScrollView {...props} contentContainerStyle={{ flex: 1, backgroundColor: '#1c1c2e' }}>
+      {/* View principal para empurrar o botão para baixo */}
+      <View style={{ flex: 1 }}>
+        <View style={styles.drawerHeader}>
+          <Icon name="lock" size={50} color="#00e0b8" />
+          <Text style={styles.drawerTitle}>CryptLock</Text>
+        </View>
+        <DrawerItemList {...props} />
       </View>
-      <DrawerItemList {...props} />
+
+      {/* Seção de Logout no final */}
+      <View style={styles.logoutSection}>
+        <TouchableOpacity onPress={handleLogout} style={{ paddingVertical: 15 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Icon name="sign-out" size={22} color="#ccc" />
+            <Text style={styles.logoutText}>Sair</Text>
+          </View>
+        </TouchableOpacity>
+      </View>
     </DrawerContentScrollView>
   );
 }
+
 
 function DrawerNavigator() {
   return (
@@ -115,4 +145,16 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginTop: 10,
   },
+  logoutSection: {
+    paddingHorizontal: 20,
+    borderTopWidth: 1,
+    borderTopColor: '#333',
+  },
+  logoutText: {
+    fontSize: 16,
+    marginLeft: 15,
+    fontWeight: '600',
+    color: '#ccc',
+  },
+
 });

@@ -137,22 +137,10 @@ export default function GeneratorScreen({ route, navigation }) {
     Alert.alert('Copiado!', 'Senha copiada para a área de transferência.');
   };
 
-  const handleLogout = async () => {
-    await signOut(auth);
-    navigation.reset({ index: 0, routes: [{ name: 'Login' }] });
-  };
-
   return (
     <View style={styles.container}>
       {/* Ícone de fundo suave */}
       <Icon name="lock" style={styles.backgroundLockIcon} />
-
-      {/* Botão de sair no topo direito */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.logoutIcon} onPress={handleLogout}>
-          <Icon name="sign-out" size={24} color="#ffffff" />
-        </TouchableOpacity>
-      </View>
 
       {/* Ícone de cadeado maior e mais opaco acima do título */}
       <Icon name="lock" style={styles.topLockIcon} />
