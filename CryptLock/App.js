@@ -1,12 +1,17 @@
+// CryptLock/App.js
+
 import 'react-native-gesture-handler';
 import React, { useState, useEffect } from 'react';
-import { NavigationContainer, DefaultTheme, DarkTheme } from '@react-navigation/native';
+import { NavigationContainer, DarkTheme } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { createDrawerNavigator, DrawerContentScrollView, DrawerItemList } from '@react-navigation/drawer';
-import { onAuthStateChanged } from 'firebase/auth';
+
+// ---- VERIFIQUE ESTAS IMPORTAÇÕES ----
+import { onAuthStateChanged, signOut } from 'firebase/auth'; // <<< 'signOut' ESTÁ AQUI
 import { auth } from './firebaseConfig';
-import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Alert } from 'react-native'; // <<< 'TouchableOpacity' e 'Alert' AQUI
 import Icon from 'react-native-vector-icons/FontAwesome';
+// ------------------------------------
 
 import LoginScreen from './screens/LoginScreen';
 import RegisterScreen from './screens/RegisterScreen';
@@ -35,17 +40,17 @@ const drawerStyles = {
   },
 };
 
+// ---- CONTEÚDO DA ABA LATERAL COM A LÓGICA CORRETA ----
 function CustomDrawerContent(props) {
-  // Lógica de logout com a janela de confirmação
   const handleLogout = () => {
     Alert.alert(
       "Confirmar Saída",
       "Você tem certeza que deseja sair?",
       [
         { text: "Cancelar", style: "cancel" },
-        { 
-          text: "Sair", 
-          onPress: () => signOut(auth),
+        {
+          text: "Sair",
+          onPress: () => signOut(auth), // A função signOut importada é usada aqui
           style: "destructive"
         }
       ]
@@ -54,7 +59,6 @@ function CustomDrawerContent(props) {
 
   return (
     <DrawerContentScrollView {...props} contentContainerStyle={{ flex: 1, backgroundColor: '#1c1c2e' }}>
-      {/* View principal para empurrar o botão para baixo */}
       <View style={{ flex: 1 }}>
         <View style={styles.drawerHeader}>
           <Icon name="lock" size={50} color="#00e0b8" />
@@ -63,7 +67,6 @@ function CustomDrawerContent(props) {
         <DrawerItemList {...props} />
       </View>
 
-      {/* Seção de Logout no final */}
       <View style={styles.logoutSection}>
         <TouchableOpacity onPress={handleLogout} style={{ paddingVertical: 15 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center' }}>
@@ -75,7 +78,6 @@ function CustomDrawerContent(props) {
     </DrawerContentScrollView>
   );
 }
-
 
 function DrawerNavigator() {
   return (
@@ -156,5 +158,4 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     color: '#ccc',
   },
-
 });
