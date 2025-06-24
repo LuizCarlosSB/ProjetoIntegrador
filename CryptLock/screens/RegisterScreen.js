@@ -13,6 +13,7 @@ import {
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import { validatePassword } from '../utils/passwordUtils';
 
 const styles = StyleSheet.create({
   container: {
@@ -75,6 +76,14 @@ export default function RegisterScreen({ navigation }) {
       return;
     }
 
+    // --- NOVA VALIDAÇÃO DE SENHA ---
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.isValid) {
+      Alert.alert('Senha Insegura', passwordValidation.message);
+      return;
+    }
+
+
     createUserWithEmailAndPassword(auth, email, password)
       .then(() => {
         Alert.alert('Sucesso', 'Conta criada com sucesso!');
@@ -98,6 +107,7 @@ export default function RegisterScreen({ navigation }) {
         Alert.alert('Erro', errorMessage);
       });
   };
+
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>

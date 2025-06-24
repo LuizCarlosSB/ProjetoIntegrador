@@ -10,13 +10,14 @@ import * as Clipboard from 'expo-clipboard';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { signOut } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
+import { checkPasswordStrength } from '../utils/passwordUtils';
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#1c1c2e',
     paddingHorizontal: 30,
-    paddingTop: 100,  // Mais espaço no topo para "baixar" os elementos
+    paddingTop: 100,
     alignItems: 'center',
   },
   backgroundLockIcon: {
@@ -35,19 +36,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     alignSelf: 'center',
   },
-  header: {
-    width: '100%',
-    flexDirection: 'row',
-    justifyContent: 'flex-end',
-    marginBottom: 40,
-    position: 'absolute',
-    top: 40,
-    right: 30,
-    zIndex: 1,
-  },
-  logoutIcon: {
-    padding: 5,
-  },
   title: {
     fontSize: 28,
     fontWeight: '700',
@@ -62,9 +50,15 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     padding: 20,
     borderRadius: 10,
-    marginBottom: 30,
+    marginBottom: 15, // Reduzido um pouco para dar espaço à força
     fontWeight: '500',
     width: '100%',
+  },
+  strengthText: { // Estilo para o texto de força da senha
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
+    marginBottom: 20,
   },
   button: {
     backgroundColor: '#007AFF',
@@ -123,10 +117,37 @@ function generatePassword(length = 16) {
 export default function GeneratorScreen({ route, navigation }) {
   const [password, setPassword] = useState('');
   const [length, setLength] = useState(16);
+  const [strength, setStrength] = useState(null);
 
-  const handleGenerate = () => {
-    const newPass = generatePassword(length);
+const handleGenerate = () => {
+    let newPass = '';
+    let strengthResult = null;
+    let attempts = 0; // Trava de segurança para evitar loop infinito
+
+    // Continua gerando senhas até que a pontuação seja 4 (Forte) ou 5 (Muito Forte)
+    while (true) {
+      newPass = generatePassword(length);
+      strengthResult = checkPasswordStrength(newPass);
+
+      // Se a pontuação for >= 4, a senha é aceitável e o loop para.
+      if (strengthResult.score >= 4) {
+        break;
+      }
+
+      attempts++;
+      // Se por algum motivo não conseguir gerar em 100 tentativas, avisa o usuário.
+      if (attempts > 100) {
+        Alert.alert(
+          'Aviso',
+          'Não foi possível gerar uma senha forte com o tamanho atual. Tente aumentar o comprimento.'
+        );
+        return;
+      }
+    }
+
     setPassword(newPass);
+    setStrength(strengthResult);
+
     if (route.params?.addPassword) {
       route.params.addPassword(newPass);
     }
@@ -172,7 +193,13 @@ export default function GeneratorScreen({ route, navigation }) {
         {password || 'Clique em Gerar'}
       </Text>
 
-      {/* Botões */}
+      {/* --- EXIBIÇÃO DA FORÇA --- */}
+      {strength && (
+        <Text style={[styles.strengthText, { color: strength.color }]}>
+          Força: {strength.label}
+        </Text>
+      )}
+
       <TouchableOpacity style={styles.button} onPress={handleGenerate}>
         <Text style={styles.buttonText}>Gerar Senha</Text>
       </TouchableOpacity>

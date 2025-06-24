@@ -17,6 +17,7 @@ import { collection, addDoc, updateDoc, deleteDoc, onSnapshot, query, where, doc
 import { db, auth } from '../firebaseConfig';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import { checkPasswordStrength } from '../utils/passwordUtils';
 
 if (Platform.OS === 'android') {
   UIManager.setLayoutAnimationEnabledExperimental?.(true);
@@ -28,6 +29,8 @@ export default function VaultScreen({ navigation }) {
   const [currentPassword, setCurrentPassword] = useState(null);
   const [formData, setFormData] = useState({ servico: '', usuario: '', senha: '' });
   const modalScale = useRef(new Animated.Value(0)).current;
+  const [visiblePasswords, setVisiblePasswords] = useState(new Set());
+  const [passwordStrength, setPasswordStrength] = useState(null);
 
   useEffect(() => {
     if (!auth.currentUser) return;
@@ -41,13 +44,13 @@ export default function VaultScreen({ navigation }) {
     return unsubscribe;
   }, []);
 
-  const openModal = (password) => {
+const openModal = (password) => {
     setCurrentPassword(password || null);
-    setFormData(
-      password
-        ? { servico: password.servico, usuario: password.usuario, senha: password.senha }
-        : { servico: '', usuario: '', senha: '' }
-    );
+    const initialFormData = password
+      ? { servico: password.servico, usuario: password.usuario, senha: password.senha }
+      : { servico: '', usuario: '', senha: '' };
+    setFormData(initialFormData);
+    setPasswordStrength(checkPasswordStrength(initialFormData.senha)); // Calcula a força inicial
     setModalVisible(true);
     Animated.spring(modalScale, {
       toValue: 1,
@@ -55,12 +58,15 @@ export default function VaultScreen({ navigation }) {
     }).start();
   };
 
-  const closeModal = () => {
+const closeModal = () => {
     Animated.timing(modalScale, {
       toValue: 0,
       duration: 150,
       useNativeDriver: true,
-    }).start(() => setModalVisible(false));
+    }).start(() => {
+      setModalVisible(false);
+      setPasswordStrength(null); // Limpa a força ao fechar
+    });
   };
 
   const savePassword = async () => {
@@ -93,9 +99,26 @@ export default function VaultScreen({ navigation }) {
     }
   };
 
+  const togglePasswordVisibility = (id) => {
+    const newVisiblePasswords = new Set(visiblePasswords);
+    if (newVisiblePasswords.has(id)) {
+      newVisiblePasswords.delete(id);
+    } else {
+      newVisiblePasswords.add(id);
+    }
+    setVisiblePasswords(newVisiblePasswords);
+  };
+
+    const handleFormChange = (field, value) => {
+    const newFormData = { ...formData, [field]: value };
+    setFormData(newFormData);
+    if (field === 'senha') {
+      setPasswordStrength(checkPasswordStrength(value));
+    }
+  };
+
   return (
     <View style={styles.container}>
-      {/* Ícone decorativo */}
       <Icon
         name={passwords.length > 0 ? 'unlock' : 'lock'}
         style={styles.backgroundIcon}
@@ -104,7 +127,7 @@ export default function VaultScreen({ navigation }) {
       <TouchableOpacity style={styles.addButton} onPress={() => openModal()}>
         <Text style={styles.buttonText}>Adicionar Senha</Text>
       </TouchableOpacity>
-
+      
       {passwords.length === 0 ? (
         <Text style={styles.emptyMessage}>Nenhuma senha cadastrada ainda.</Text>
       ) : (
@@ -112,24 +135,29 @@ export default function VaultScreen({ navigation }) {
           data={passwords}
           keyExtractor={(item) => item.id}
           contentContainerStyle={styles.listContent}
-          renderItem={({ item }) => (
-            <View style={styles.item}>
-              <Text style={styles.itemText}>🔹 Serviço: {item.servico}</Text>
-              <Text style={styles.itemText}>👤 Usuário: {item.usuario}</Text>
-              <Text style={styles.itemText}>🔑 Senha: {item.senha}</Text>
-              <View style={styles.buttonGroup}>
-                <TouchableOpacity onPress={() => openModal(item)} style={styles.smallButton}>
-                  <Text style={styles.buttonText}>Editar</Text>
-                </TouchableOpacity>
-                <TouchableOpacity
-                  onPress={() => deletePassword(item.id)}
-                  style={[styles.smallButton, styles.deleteButton]}
-                >
-                  <Text style={styles.buttonText}>Excluir</Text>
-                </TouchableOpacity>
+          renderItem={({ item }) => {
+            const isVisible = visiblePasswords.has(item.id);
+            const strength = checkPasswordStrength(item.senha);
+            return (
+              <View style={styles.item}>
+                <Text style={styles.itemText}>🔹 Serviço: {item.servico}</Text>
+                <Text style={styles.itemText}>👤 Usuário: {item.usuario}</Text>
+                <View style={styles.passwordRow}>
+                  <Text style={styles.itemText}>
+                    🔑 Senha: {isVisible ? item.senha : '••••••••'}
+                  </Text>
+                  <TouchableOpacity onPress={() => togglePasswordVisibility(item.id)}>
+                    <Icon name={isVisible ? 'eye-slash' : 'eye'} size={20} color="#ccc" />
+                  </TouchableOpacity>
+                </View>
+                <Text style={[styles.strengthText, { color: strength.color }]}>
+                  Força: {strength.label}
+                </Text>
+                <View style={styles.buttonGroup}>
+                </View>
               </View>
-            </View>
-          )}
+            );
+          }}
         />
       )}
 
@@ -143,24 +171,29 @@ export default function VaultScreen({ navigation }) {
               placeholder="Serviço"
               placeholderTextColor="#888"
               value={formData.servico}
-              onChangeText={(t) => setFormData({ ...formData, servico: t })}
+              onChangeText={(t) => handleFormChange('servico', t)}
               style={styles.input}
             />
             <TextInput
               placeholder="Usuário"
               placeholderTextColor="#888"
               value={formData.usuario}
-              onChangeText={(t) => setFormData({ ...formData, usuario: t })}
+              onChangeText={(t) => handleFormChange('usuario', t)}
               style={styles.input}
             />
             <TextInput
               placeholder="Senha"
               placeholderTextColor="#888"
               value={formData.senha}
-              onChangeText={(t) => setFormData({ ...formData, senha: t })}
-              secureTextEntry
+              onChangeText={(t) => handleFormChange('senha', t)}
+              secureTextEntry // A senha no modal já estava segura
               style={styles.input}
             />
+            {passwordStrength && passwordStrength.label && (
+              <Text style={[styles.strengthText, { color: passwordStrength.color, marginBottom: 15, textAlign: 'center' }]}>
+                Força: {passwordStrength.label}
+              </Text>
+            )}
             <View style={styles.buttonGroup}>
               <TouchableOpacity onPress={closeModal} style={[styles.smallButton, styles.cancelButton]}>
                 <Text style={styles.buttonText}>Cancelar</Text>
@@ -277,5 +310,15 @@ const styles = StyleSheet.create({
     marginBottom: 15,
     borderWidth: 1,
     borderColor: '#3c3c4e',
+  },
+    passwordRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  strengthText: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginTop: 8,
   },
 });
