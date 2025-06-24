@@ -1,4 +1,4 @@
-// screens/LoginScreen.js
+// screens/RegisterScreen.js
 import React, { useState } from 'react';
 import {
   View,
@@ -9,13 +9,11 @@ import {
   TouchableOpacity,
   TouchableWithoutFeedback,
   Keyboard,
-  ActivityIndicator, // Adicione esta linha
 } from 'react-native';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '../firebaseConfig';
 import Icon from 'react-native-vector-icons/FontAwesome';
-import { loginUser } from '../services/authService';
-import StyledButton from '../components/StyledButton';
+import { validatePassword } from '../utils/passwordUtils';
 
 const styles = StyleSheet.create({
   container: {
@@ -36,7 +34,7 @@ const styles = StyleSheet.create({
     opacity: 0.08,
   },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '700',
     color: '#ffffff',
   },
@@ -67,46 +65,56 @@ const styles = StyleSheet.create({
   },
 });
 
-export default function LoginScreen({ navigation }) {
+export default function RegisterScreen({ navigation }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [confirmPassword, setConfirmPassword] = useState('');
 
-  const handleLogin = () => {
-    setLoading(true);
-    loginUser(email, password)
+  const handleRegister = () => {
+    if (password !== confirmPassword) {
+      Alert.alert('Erro', 'As senhas não coincidem');
+      return;
+    }
+
+    // --- NOVA VALIDAÇÃO DE SENHA ---
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.isValid) {
+      Alert.alert('Senha Insegura', passwordValidation.message);
+      return;
+    }
+
+
+    createUserWithEmailAndPassword(auth, email, password)
       .then(() => {
-        // Navegação será gerenciada pelo onAuthStateChanged
+        Alert.alert('Sucesso', 'Conta criada com sucesso!');
+        navigation.navigate('Login');
       })
       .catch(error => {
         let errorMessage;
         switch (error.code) {
+          case 'auth/email-already-in-use':
+            errorMessage = 'Este email já está em uso.';
+            break;
           case 'auth/invalid-email':
             errorMessage = 'Email inválido.';
             break;
-          case 'auth/user-disabled':
-            errorMessage = 'Esta conta foi desativada.';
-            break;
-          case 'auth/user-not-found':
-          case 'auth/wrong-password':
-            errorMessage = 'Email ou senha incorretos.';
+          case 'auth/weak-password':
+            errorMessage = 'A senha deve ter pelo menos 6 caracteres.';
             break;
           default:
             errorMessage = 'Ocorreu um erro. Tente novamente.';
         }
         Alert.alert('Erro', errorMessage);
-      })
-      .finally(() => {
-        setLoading(false);
       });
   };
+
 
   return (
     <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
       <View style={styles.container}>
         <View style={styles.logoContainer}>
           <Icon name="lock" style={styles.lockIcon} />
-          <Text style={styles.title}>CryptLock</Text>
+          <Text style={styles.title}>Criar Conta</Text>
         </View>
 
         <TextInput
@@ -117,6 +125,10 @@ export default function LoginScreen({ navigation }) {
           style={styles.input}
           autoCapitalize="none"
           keyboardType="email-address"
+          underlineColorAndroid="transparent"
+          textContentType="none"
+          autoComplete="off"
+          importantForAutofill="no"
         />
         <TextInput
           placeholder="Senha"
@@ -125,19 +137,32 @@ export default function LoginScreen({ navigation }) {
           onChangeText={setPassword}
           secureTextEntry
           style={styles.input}
+          underlineColorAndroid="transparent"
+          textContentType="none"
+          autoComplete="off"
+          importantForAutofill="no"
         />
-        <TouchableOpacity style={styles.button} onPress={handleLogin} disabled={loading}>
-          {loading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text style={styles.buttonText}>Entrar</Text>
-          )}
+        <TextInput
+          placeholder="Confirmar Senha"
+          placeholderTextColor="#888"
+          value={confirmPassword}
+          onChangeText={setConfirmPassword}
+          secureTextEntry
+          style={styles.input}
+          underlineColorAndroid="transparent"
+          textContentType="none"
+          autoComplete="off"
+          importantForAutofill="no"
+        />
+
+        <TouchableOpacity style={styles.button} onPress={handleRegister}>
+          <Text style={styles.buttonText}>Registrar</Text>
         </TouchableOpacity>
         <TouchableOpacity
           style={[styles.button, styles.buttonSecondary]}
-          onPress={() => navigation.navigate('Register')}
+          onPress={() => navigation.navigate('Login')}
         >
-          <Text style={styles.buttonText}>Criar Conta</Text>
+          <Text style={styles.buttonText}>Já tem uma conta? Faça login</Text>
         </TouchableOpacity>
       </View>
     </TouchableWithoutFeedback>
