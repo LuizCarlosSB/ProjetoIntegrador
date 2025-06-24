@@ -13,7 +13,10 @@
       "backgroundColor": "#ffffff"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "O CryptLock utiliza a autenticação por Face ID para proteger e revelar suas senhas de forma segura."
+      }
     },
     "android": {
       "adaptiveIcon": {

@@ -18,6 +18,7 @@ import { db, auth } from '../firebaseConfig';
 import { onAuthStateChanged, signOut } from 'firebase/auth';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import { checkPasswordStrength } from '../utils/passwordUtils';
+import * as LocalAuthentication from 'expo-local-authentication';
 
 if (Platform.OS === 'android') {
   UIManager.setLayoutAnimationEnabledExperimental?.(true);
@@ -99,14 +100,45 @@ const closeModal = () => {
     }
   };
 
-  const togglePasswordVisibility = (id) => {
+const togglePasswordVisibility = async (id) => {
     const newVisiblePasswords = new Set(visiblePasswords);
-    if (newVisiblePasswords.has(id)) {
+    const isCurrentlyVisible = newVisiblePasswords.has(id);
+
+    // Se a senha já está visível, apenas a escondemos sem autenticação.
+    if (isCurrentlyVisible) {
       newVisiblePasswords.delete(id);
-    } else {
-      newVisiblePasswords.add(id);
+      setVisiblePasswords(newVisiblePasswords);
+      return;
     }
-    setVisiblePasswords(newVisiblePasswords);
+
+    // Se a senha está oculta, iniciamos o processo de autenticação para mostrá-la.
+    try {
+      const hasHardware = await LocalAuthentication.hasHardwareAsync();
+      if (!hasHardware) {
+        Alert.alert('Erro', 'Seu dispositivo não suporta autenticação biométrica.');
+        return;
+      }
+
+      const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+      if (!isEnrolled) {
+        Alert.alert('Aviso', 'Nenhuma biometria ou senha de tela cadastrada no dispositivo.');
+        return;
+      }
+      
+      const { success } = await LocalAuthentication.authenticateAsync({
+        promptMessage: 'Autentique-se para ver a senha',
+        cancelLabel: 'Cancelar',
+        disableDeviceFallback: false, // Permite usar PIN/Padrão se a biometria falhar
+      });
+
+      if (success) {
+        newVisiblePasswords.add(id);
+        setVisiblePasswords(newVisiblePasswords);
+      }
+    } catch (error) {
+      console.error('Erro de autenticação', error);
+      Alert.alert('Erro', 'Não foi possível autenticar.');
+    }
   };
 
     const handleFormChange = (field, value) => {
